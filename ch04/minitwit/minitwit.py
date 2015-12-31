@@ -14,13 +14,12 @@ from sqlite3 import dbapi2 as sqlite3
 from hashlib import md5
 from datetime import datetime
 from contextlib import closing
-from flask import Flask, request, session, url_for, redirect, \
-     render_template, abort, g, flash
+from flask import Flask, request, session, url_for, redirect, render_template, abort, g, flash
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
 # configuration
-DATABASE = '/tmp/minitwit.db'
+DATABASE = 'C:/tmp/minitwit.db'
 PER_PAGE = 30
 DEBUG = True
 SECRET_KEY = 'development key'
@@ -249,4 +248,4 @@ app.jinja_env.filters['gravatar'] = gravatar_url
 
 if __name__ == '__main__':
     init_db()
-    app.run()
+    app.run(host='0.0.0.0', port=20000 , threaded=True, debug=True)
