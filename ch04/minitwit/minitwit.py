@@ -18,7 +18,7 @@ from flask import Flask, request, session, url_for, redirect, render_template, a
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
-# configuration
+# configuration for database (Must be Upper String)
 DATABASE = 'C:/tmp/minitwit.db'
 PER_PAGE = 30
 DEBUG = True
@@ -32,6 +32,7 @@ app.config.from_envvar('MINITWIT_SETTINGS', silent=True)
 
 def connect_db():
     """Returns a new connection to the database."""
+    #
     return sqlite3.connect(app.config['DATABASE'])
 
 
@@ -44,6 +45,12 @@ def init_db():
 
 
 def query_db(query, args=(), one=False):
+    """
+    :param query: 실행할 질의문
+    :param args: 바인딩 변수(튜플)
+    :param one: one == True 인 경우 모든 값, False 인 경우 첫번째 요소만 리턴
+    :return: 결과값
+    """
     """Queries the database and returns a list of dictionaries."""
     cur = g.db.execute(query, args)
     rv = [dict((cur.description[idx][0], value)
@@ -74,18 +81,21 @@ def gravatar_url(email, size=80):
 def before_request():
     """Make sure we are connected to the database each request and look
     up the current user so that we know he's there.
+    g객체는 전역 객체로, 한번의 요청에 대해서만 같은 값을 유지하고, 스레드에 안전하다.
+    각 요청이 생성되기 바로 전에 g 객체의 db와 user 속성에 각 데이터베이스 연결과 사용자 정보를 저장하고,
+    오류가 발생하더라도, g객체에 데이터베이스 연결 속성인 'db'가 있는지 확인하고 데이터베이스 연결을 닫는다.
     """
     g.db = connect_db()
     g.user = None
-    if 'user_id' in session:
-        g.user = query_db('select * from user where user_id = ?',
+    if 'user_id' in session:    # 세션에 사용자 id가 있으면
+        g.user = query_db('select * from user where user_id = ?',   # db에 질의하여 사용자 정보를 가져온다.
                           [session['user_id']], one=True)
 
 
 @app.teardown_request
 def teardown_request(exception):
     """Closes the database again at the end of the request."""
-    if hasattr(g, 'db'):
+    if hasattr(g, 'db'):    # 전역객체 g에 'db'속성이 있으면, db를 닫는다.
         g.db.close()
 
 
@@ -207,10 +217,11 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     """Registers the user."""
-    if g.user:
+    if g.user:          # 로그인을 했다면, timeline으로 리다이렉션, 아니면 HTTP 메서드에 따라, 사용자를 등록
         return redirect(url_for('timeline'))
     error = None
-    if request.method == 'POST':
+    if request.method == 'POST':            # POST인 경우, form을 통해 등록을 했다는 의미이므로, 등록을 처리
+        # 유효성 검사
         if not request.form['username']:
             error = 'You have to enter a username'
         elif not request.form['email'] or \
@@ -222,15 +233,16 @@ def register():
             error = 'The two passwords do not match'
         elif get_user_id(request.form['username']) is not None:
             error = 'The username is already taken'
-        else:
+        else:   # 유효성 검사가 통과했다면, db에 저장
             g.db.execute('''insert into user (
                 username, email, pw_hash) values (?, ?, ?)''',
                 [request.form['username'], request.form['email'],
-                 generate_password_hash(request.form['password'])])
-            g.db.commit()
+                 generate_password_hash(request.form['password'])])     # one-way hashing for password
+            g.db.commit()   # 커밋
             flash('You were successfully registered and can login now')
+            # 성공 메시지 설정, 템플릿에서 get_flashed_messages()를 사용하여 얻을 수 있다.
             return redirect(url_for('login'))
-    return render_template('register.html', error=error)
+    return render_template('register.html', error=error)            # GET이라면 등록이 필요하므로 등록화면으로 이동
 
 
 @app.route('/logout')
