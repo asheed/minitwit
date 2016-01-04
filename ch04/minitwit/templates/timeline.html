@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
 {% block title %}
   {% if request.endpoint == 'public_timeline' %}
-    Public Timeline
+    공용 타임라인
   {% elif request.endpoint == 'user_timeline' %}
-    {{ profile_user.username }}'s Timeline
+    {{ profile_user.username }}의 타임라인
   {% else %}
-    My Timeline
+    내 타임라인
   {% endif %}
 {% endblock %}
 {% block body %}
@@ -14,20 +14,20 @@
     {% if request.endpoint == 'user_timeline' %}
       <div class=followstatus>
       {% if g.user.user_id == profile_user.user_id %}
-        This is you!
+        당신이요!
       {% elif followed %}
-        You are currently following this user.
+        이 사용자를 팔로우 하고 있습니다.
         <a class=unfollow href="{{ url_for('unfollow_user', username=profile_user.username)
-          }}">Unfollow user</a>.
+          }}">이 사용자를 언팔로우 하기</a>.
       {% else %}
-        You are not yet following this user.
+        이 사용자를 아직 팔로우 하고 있지 않습니다..
         <a class=follow href="{{ url_for('follow_user', username=profile_user.username)
-          }}">Follow user</a>.
+          }}">이 사용자를 팔로우 하기</a>.
       {% endif %}
       </div>
     {% elif request.endpoint == 'timeline' %}
       <div class=twitbox>
-        <h3>What's on your mind {{ g.user.username }}?</h3>
+        <h3>기분이 어떠세요, {{ g.user.username }}?</h3>
         <form action="{{ url_for('add_message') }}" method=post>
           <p><input type=text name=text size=60>
           <input type=submit value="Share">
@@ -43,7 +43,7 @@
       {{ message.text }}
       <small>&mdash; {{ message.pub_date|datetimeformat }}</small>
   {% else %}
-    <li><em>There's no message so far.</em>
+    <li><em>등록된 메시지가 존재하지 않습니다.</em>
   {% endfor %}
   </ul>
 {% endblock %}

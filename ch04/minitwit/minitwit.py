@@ -32,7 +32,7 @@ app.config.from_envvar('MINITWIT_SETTINGS', silent=True)
 
 def connect_db():
     """Returns a new connection to the database."""
-    #
+    # DB연결
     return sqlite3.connect(app.config['DATABASE'])
 
 
@@ -158,7 +158,7 @@ def follow_user(username):
     g.db.execute('insert into follower (who_id, whom_id) values (?, ?)',
                 [session['user_id'], whom_id])
     g.db.commit()
-    flash('You are now following "%s"' % username)
+    flash(u'당신은 지금부터 "%s"를 following 합니다.' % username)
     return redirect(url_for('user_timeline', username=username))
 
 
@@ -173,7 +173,7 @@ def unfollow_user(username):
     g.db.execute('delete from follower where who_id=? and whom_id=?',
                 [session['user_id'], whom_id])
     g.db.commit()
-    flash('You are no longer following "%s"' % username)
+    flash(u'당신은 더이상 "%s"를 following 하지 않습니다.' % username)
     return redirect(url_for('user_timeline', username=username))
 
 
@@ -189,7 +189,7 @@ def add_message():
                                   request.form['text'],
                                   int(time.time())))
         g.db.commit()
-        flash('Your message was recorded')
+        flash(u'게시물이 등록되었습니다.')
     return redirect(url_for('timeline'))
 
 
@@ -203,12 +203,12 @@ def login():
         user = query_db('''select * from user where
             username = ?''', [request.form['username']], one=True)
         if user is None:
-            error = 'Invalid username'
+            error = u'username이 존재하지 않습니다.'
         elif not check_password_hash(user['pw_hash'],
                                      request.form['password']):
-            error = 'Invalid password'
+            error = u'비밀번호가 맞지 않습니다.'
         else:
-            flash('You were logged in')
+            flash(u'정상적으로 로그인 되었습니다.')
             session['user_id'] = user['user_id']
             return redirect(url_for('timeline'))
     return render_template('login.html', error=error)
@@ -223,23 +223,23 @@ def register():
     if request.method == 'POST':            # POST인 경우, form을 통해 등록을 했다는 의미이므로, 등록을 처리
         # 유효성 검사
         if not request.form['username']:
-            error = 'You have to enter a username'
+            error = u'Username은 반드시 입력하여야 합니다.'
         elif not request.form['email'] or \
                  '@' not in request.form['email']:
-            error = 'You have to enter a valid email address'
+            error = u'올바르지 않은 형식의 이메일 주소입니다.'
         elif not request.form['password']:
-            error = 'You have to enter a password'
+            error = u'비밀번호는 반드시 입력하여야 합니다.'
         elif request.form['password'] != request.form['password2']:
-            error = 'The two passwords do not match'
+            error = u'비밀번호가 일치하지 않습니다.'
         elif get_user_id(request.form['username']) is not None:
-            error = 'The username is already taken'
+            error = u'Username이 이미 존재합니다.'
         else:   # 유효성 검사가 통과했다면, db에 저장
             g.db.execute('''insert into user (
                 username, email, pw_hash) values (?, ?, ?)''',
                 [request.form['username'], request.form['email'],
                  generate_password_hash(request.form['password'])])     # one-way hashing for password
             g.db.commit()   # 커밋
-            flash('You were successfully registered and can login now')
+            flash(u'당신은 성공적으로 등록되었으며, 지금부터 로그인 가능합니다.')
             # 성공 메시지 설정, 템플릿에서 get_flashed_messages()를 사용하여 얻을 수 있다.
             return redirect(url_for('login'))
     return render_template('register.html', error=error)            # GET이라면 등록이 필요하므로 등록화면으로 이동
@@ -248,7 +248,7 @@ def register():
 @app.route('/logout')
 def logout():
     """Logs the user out."""
-    flash('You were logged out')
+    flash(u'정상적으로 로그아웃 되었습니다.')
     session.pop('user_id', None)
     return redirect(url_for('public_timeline'))
 
